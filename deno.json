@@ -1,0 +1,11 @@
+{
+  "tasks": {
+    "dev": "deno run --watch --allow-all app/index.ts"
+  },
+  "imports": {
+    "lodash": "npm:lodash@^4.17",
+    "loggings":"npm:loggings@^1.5",
+    "@types/node":"npm:@types/node",
+    "@/": "./app/"
+  }
+}
