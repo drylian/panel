@@ -1,4 +1,5 @@
 import { Config, Configuration } from "../controllers/configuration.ts";
+import { DatabaseConf } from "@/config/database.ts";
 import { LoggerConf } from "./logger.ts";
 
 /**
@@ -63,13 +64,8 @@ export const Global = {
         def: false,
     }),
     
-    /**
-     * Additional logger configuration settings.
-     * These settings are imported from the LoggerConf module.
-     * 
-     * @type {Object}
-     */
-    ...LoggerConf
+    ...LoggerConf,
+    ...DatabaseConf
 };
 
 /**

@@ -5,8 +5,10 @@ import { Configuration } from "@/controllers/configuration.ts";
 import { watch } from "node:fs";
 import { Global } from "@/config/index.ts";
 import { Vite } from "@/libs/vite.ts";
-import { opine } from "https://deno.land/x/opine@2.3.4/src/opine.ts";
+import { opine } from "opine";
 import { Terminal } from "@/controllers/terminal.ts";
+import { Database } from "@/controllers/database.ts";
+import { Model } from "denodb";
 console.log("Loading [kernels].green...");
 let timeout: number | null = null;
 
@@ -15,6 +17,7 @@ let timeout: number | null = null;
  */
 new Kernel({
     identify: "Configuration",
+    priority:0,
     after() {
         watch(".env", function () {
             if (!timeout) {
@@ -27,6 +30,30 @@ new Kernel({
     },
 });
 
+/**
+ * Database Configuration
+ */
+new Kernel({
+    identify: "Database",
+    priority:1,
+    imports: {
+        paths: ["models/**/*.ts"],
+        import(modul) {
+            const model = modul as { default:typeof Model }
+            if (Database.schemas) {
+                Database.schemas.push(model.default);
+            }
+        },
+    },
+    async after() {
+        Database.preset();
+        await Database.initialize();
+    },
+});
+
+/**
+ * Http configuration Kernel
+ */
 new Kernel({
     identify: "Http",
     after() {

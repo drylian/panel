@@ -1,11 +1,15 @@
 {
   "tasks": {
-    "dev": "deno run --watch --allow-all app/index.ts"
+    "dev": "deno run --watch --allow-all app/index.ts",
+    "reload":"deno cache --reload app/index.ts"
   },
   "imports": {
+    "expand_glob":"https://deno.land/std@0.178.0/fs/expand_glob.ts",
+    "opine":"https://deno.land/x/opine@2.3.4/src/opine.ts",
     "lodash": "npm:lodash@^4.17",
     "loggings":"npm:loggings@^1.5",
     "@types/node":"npm:@types/node",
+    "denodb":"https://raw.githubusercontent.com/drylian/denodb/master/mod.ts",
     "@/": "./app/"
   }
 }

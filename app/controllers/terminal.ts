@@ -70,7 +70,7 @@ new Terminal({
         }
 
         const helpText = commandsToShow.map((cmd) => {
-            return `> [${cmd.cmd.name}].gold <[${cmd.cmd.args?.join("].green> <[")}].green> - ${cmd.cmd.description}`;
+            return `> [${cmd.cmd.name}].gold < [${cmd.cmd.args?.join("].green > < [")}].green > - ${cmd.cmd.description}`;
         }).join("\n");
 
         console.log(`Commands (Page [${page}].blue/[${totalPages}].blue):\n${helpText}`);

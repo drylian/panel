@@ -1,5 +1,5 @@
 import { trySet } from "@/helpers.ts";
-import env from "../libs/env.ts";
+import env from "@/libs/env.ts";
 import { Global } from "@/config/index.ts";
 import { Loggings, LoggingsConfig } from "loggings";
 

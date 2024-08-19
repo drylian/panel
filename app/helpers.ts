@@ -2,7 +2,7 @@ import { Loggings, LoggingsConfig } from "loggings";
 import {
     expandGlob,
     ExpandGlobOptions,
-} from "https://deno.land/std@0.178.0/fs/expand_glob.ts";
+} from "expand_glob";
 import { exec, ExecOptions } from "node:child_process";
 
 /**
@@ -66,6 +66,15 @@ export function trySet<Datable>(
     }
 }
 
+/**
+ * Executes a shell command synchronously and writes the output to the Deno stdout.
+ *
+ * @param {string} cmd - The command to be executed.
+ * @returns {ChildProcess} The spawned child process.
+ *
+ * @example
+ * executeSync("ls -la");
+ */
 export function executeSync(cmd: string) {
     const process = exec(cmd);
 
@@ -80,9 +89,22 @@ export function executeSync(cmd: string) {
             Deno.stdout.write(new TextEncoder().encode(data.toString()));
         });
     }
+
     return process;
 }
 
+/**
+ * Executes a shell command asynchronously and writes the output to the Deno stdout.
+ *
+ * @param {string} cmd - The command to be executed.
+ * @param {ExecOptions} [options] - Optional options to configure the execution.
+ * @returns {Promise<void>} A promise that resolves when the command completes.
+ *
+ * @example
+ * execute("ls -la")
+ *   .then(() => console.log("Command executed successfully!"))
+ *   .catch(err => console.error(`Failed to execute command: ${err.message}`));
+ */
 export function execute(cmd: string, options?: ExecOptions): Promise<void> {
     return new Promise((resolve) => {
         const process = exec(cmd, options);
@@ -114,6 +136,7 @@ export function execute(cmd: string, options?: ExecOptions): Promise<void> {
         });
     });
 }
+
 /**
  * Loggings Configurations
  */
