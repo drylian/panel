@@ -1,9 +1,8 @@
-import { trySet } from "@/helpers.ts";
-import env from "@/libs/env.ts";
-import { Global } from "@/config/index.ts";
-import { Loggings, LoggingsConfig } from "loggings";
+import { trySet } from "@/helpers";
+import env from "@/libs/env";
+import { Loggings } from "@loggings/beta";
 
-export enum Config {
+enum Config {
     String = "Str",
     Number = "Int",
     Boolean = "Bool",
@@ -17,8 +16,9 @@ interface Constructor<Schematic> {
     def: Schematic;
 }
 
-export class Configuration<Schematic> {
+export class EnvConfiguration<Schematic> {
     public readonly type: Config;
+    public static readonly type = Config;
     public readonly env: string;
     public readonly save: boolean;
     public value: Schematic;
@@ -33,10 +33,6 @@ export class Configuration<Schematic> {
         this.save = typeof opts.save !== "boolean" ? false : opts.save;
     }
 
-    public get get() {
-        return this.value;
-    }
-
     public update(value: Schematic, nosave = false) {
         if (!nosave) env.save(this.env, JSON.stringify(value));
         this.value = value;
@@ -44,11 +40,11 @@ export class Configuration<Schematic> {
 
     public static config() {
         const envs = env.envall();
-        for (const _key in Global) {
-            const key = _key as keyof typeof Global;
-            const config = Global[key];
+        for (const _key in global.__Configurations) {
+            const key = _key as keyof typeof global.__Configurations;
+            const config = global.__Configurations[key];
             
-            if (envs[config.env] == (typeof config.get !== "string" ? JSON.stringify(config.get) : config.get)) continue;
+            if (envs[config.env] == (typeof config.value !== "string" ? JSON.stringify(config.value) : config.value)) continue;
             if (envs[config.env]) {
                 let value;
                 if (config.chk) {
@@ -61,12 +57,12 @@ export class Configuration<Schematic> {
                         config.def as never,
                     );
                 }
-                Global[key].update(value as never);
+                global.__Configurations[key].update(value as never);
                 console.debug(`[${config.env}].blue-b - Changed`);
                 if (_key.startsWith("log")) {
                     // update loggings conf
-                    LoggingsConfig({
-                        ...Loggings._default_configurations,
+                    Loggings.config({
+                        ...Loggings.getDefaults(),
                         [_key.slice(4)]: value,
                     });
                 }

@@ -1,9 +1,13 @@
-import { Loggings, LoggingsConfig } from "loggings";
-import {
-    expandGlob,
-    ExpandGlobOptions,
-} from "expand_glob";
+import { Config } from "@/controllers/config";
+global.Config = Config;
+import { Loggings, LoggingsConsole } from "@loggings/beta";
 import { exec, ExecOptions } from "node:child_process";
+import { Language, LoggingsTranslatorPlugin } from "@/controllers/langs";
+import { existsSync, FSWatcher, watch } from "node:fs";
+import { glob } from "glob";
+import { join } from "node:path";
+import _ from "lodash";
+import { readFile } from "node:fs/promises";
 
 /**
  * This constant provides the path of the main module that started the Node.js process.
@@ -17,37 +21,6 @@ export const rootDIR = import.meta.dirname!;
 export const modeSRC = import.meta.filename!.endsWith("ts")
     ? "Typescript"
     : "Javascript";
-
-/**
- * Dynamically imports a module relative to a given path.
- */
-export async function Dimport(to: string): Promise<unknown> {
-    const path = new URL(`file:///${to.replace(/\\/g, "/")}`);
-    return await import(path.href);
-}
-
-/**
- * Delay, just
- * @param ms time
- */
-export function delay(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-export async function Glob(
-    patterns: string[],
-    options: ExpandGlobOptions = { root: rootDIR },
-) {
-    const files: string[] = [];
-
-    for (const pattern of patterns) {
-        for await (const file of expandGlob(pattern, options)) {
-            files.push(file.path);
-        }
-    }
-
-    return files;
-}
 
 /**
  * Try callback value, case catch error set def(default)
@@ -76,17 +49,17 @@ export function trySet<Datable>(
  * executeSync("ls -la");
  */
 export function executeSync(cmd: string) {
-    const process = exec(cmd);
+    const _process = exec(cmd);
 
-    if (process && process.stdout) {
-        process.stdout.on("data", (data) => {
-            Deno.stdout.write(new TextEncoder().encode(data.toString()));
+    if (_process && _process.stdout) {
+        _process.stdout.on("data", (data) => {
+            process.stdout.write(data.toString());
         });
     }
 
-    if (process && process.stderr) {
-        process.stderr.on("data", (data) => {
-            Deno.stdout.write(new TextEncoder().encode(data.toString()));
+    if (_process && _process.stderr) {
+        _process.stderr.on("data", (data) => {
+            process.stdout.write(data.toString());
         });
     }
 
@@ -107,21 +80,21 @@ export function executeSync(cmd: string) {
  */
 export function execute(cmd: string, options?: ExecOptions): Promise<void> {
     return new Promise((resolve) => {
-        const process = exec(cmd, options);
+        const _process = exec(cmd, options);
 
-        if (process && process.stdout) {
-            process.stdout.on("data", (data) => {
-                Deno.stdout.write(new TextEncoder().encode(data.toString()));
+        if (_process && _process.stdout) {
+            _process.stdout.on("data", (data) => {
+                process.stdout.write(data.toString());
             });
         }
 
-        if (process && process.stderr) {
-            process.stderr.on("data", (data) => {
-                Deno.stdout.write(new TextEncoder().encode(data.toString()));
+        if (_process && _process.stderr) {
+            _process.stderr.on("data", (data) => {
+                process.stdout.write(data.toString());
             });
         }
 
-        process.on("close", (code) => {
+        _process.on("close", (code) => {
             if (code === 0) {
                 resolve();
             } else {
@@ -130,7 +103,7 @@ export function execute(cmd: string, options?: ExecOptions): Promise<void> {
             }
         });
 
-        process.on("error", (err) => {
+        _process.on("error", (err) => {
             console.error(`Child Error: ${err.message}`);
             resolve();
         });
@@ -138,26 +111,87 @@ export function execute(cmd: string, options?: ExecOptions): Promise<void> {
 }
 
 /**
+ * Extending fs watch to something more useful
+ */
+export async function watcher(
+    path: string,
+    callback: (
+        event: "delete" | "edit" | "create",
+        filepath: string,
+    ) => Promise<void>,
+    cwd?: string,
+    timeout_ = 700
+) {
+    const watchers: Record<string, FSWatcher> = {};
+    async function loadfiles() {
+        const files = await glob(path, { cwd: cwd });
+        files.forEach(async (locale) => {
+            //load event "delete"
+            if (!existsSync(join(cwd ? cwd : "", locale)) && watchers[locale]) {
+                delete watchers[locale];
+                await callback("delete", locale);
+            }
+            // load event "create"
+            else if (existsSync(join(cwd ? cwd : "", locale)) && !watchers[locale]) {
+                await callback("create", locale);
+                watchers[locale] = watch(locale, function () {
+                    let timeout: NodeJS.Timeout | null = null;
+                    if (!timeout) {
+                        loadfiles();
+                        timeout = setTimeout(function () {
+                            timeout = null;
+                        }, timeout_);
+                    }
+                });
+            }
+            // load event "edit"
+            else {
+                await callback("edit", locale);
+            }
+        });
+    }
+    await loadfiles();
+}
+
+/**
  * Loggings Configurations
  */
-LoggingsConfig({
+Loggings.config({
     register_dir: "storage",
     register_locale_file: "{register_dir}/logs",
     register_filename: "{year}-{month}-{day}.{ext}",
 });
 
+global.Language = Language;
+/**
+ * Remove original Console viewer of loggings
+ */
+Loggings.rem(LoggingsConsole.identify);
+/**
+ * Add custom Console viewer of loggings
+ */
+Loggings.add(LoggingsTranslatorPlugin);
 /**
  * Globalizes the logging system by replacing the default `console` methods
  * with custom methods that use the `Loggings` class for log level control
  * and formatting.
  */
 export const logger = new Loggings("Dashboard", "gold");
-globalThis.loggings = logger;
-globalThis.console = {
-    ...globalThis.console,
-    log: (...msg) => globalThis.loggings!.log(...msg),
-    error: (...msg) => globalThis.loggings!.error(...msg),
-    warn: (...msg) => globalThis.loggings!.warn(...msg),
-    info: (...msg) => globalThis.loggings!.info(...msg),
-    debug: (...msg) => globalThis.loggings!.debug(...msg),
-};
+Loggings.useConsole(logger);
+global.console.use = global.Language.live.use;
+
+/**
+ * Load primary lang of dashboard
+ */
+const paths = await glob(
+    "locales/**/*.json",
+);
+for await (const filepath of paths) {
+    const file = await readFile(filepath, "utf-8");
+    const lang = filepath.replaceAll("\\", "/").split("/").slice(1, 2)![0];
+    const json_data = trySet(() => JSON.parse(file as string), {});
+    const local = filepath.split("\\").slice(2).join("/");
+    const locale = local.replace(".json", "").replace(/[/\\]/g, ".");
+    const data = _.set({}, locale, json_data);
+    Language.core.set(lang, _.merge(Language.core.get(lang) ?? {}, data));
+}

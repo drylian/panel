@@ -1,13 +1,17 @@
-import { Dimport, Glob } from "@/helpers.ts";
-import { AnyReturn } from "@/types.ts";
+import { type AnyReturn } from "@/types/types";
+import { glob } from "glob";
+import { readFile } from "node:fs/promises";
 
 interface KernelConstructor<IKernel> {
     identify: string;
     priority?: number;
     imports?: {
+        type: "json" | "module";
         paths: string[];
-        import?: (
-            module: unknown,
+        cwd?: string;
+        action?: (
+            file: unknown,
+            path: string,
             kernel: Kernel<IKernel>,
         ) => AnyReturn;
     };
@@ -33,11 +37,25 @@ export class Kernel<IKernel> {
 
         await Promise.all(Kernel.kernels.map(async (kernel) => {
             if (kernel.imports) {
-                const paths = await Glob(kernel.imports.paths);
-                await Promise.all(paths.map(async (path) => {
-                    const module = await Dimport(path);
-                    kernel.imports?.import?.(module, kernel);
-                }));
+                if (kernel.imports.type == "module") {
+                    const paths = await glob(
+                        kernel.imports.paths,
+                        kernel.imports.cwd ? { cwd: kernel.imports.cwd } : {},
+                    );
+                    await Promise.all(paths.map(async (path) => {
+                        const module = await import(path);
+                        kernel.imports?.action!(module, path, kernel);
+                    }));
+                } else {
+                    const paths = await glob(
+                        kernel.imports.paths,
+                        kernel.imports.cwd ? { cwd: kernel.imports.cwd } : {},
+                    );
+                    await Promise.all(paths.map(async (path) => {
+                        const module = await readFile(path, "utf-8");
+                        kernel.imports?.action!(module, path, kernel);
+                    }));
+                }
             }
 
             kernel.after?.(kernel);

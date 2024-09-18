@@ -1,0 +1,5 @@
+{
+    "Welcome to Terminal interactions! digit help for view console commands":"Welcome to Terminal [interactions].blue! digit help for view console commands",
+    "Vite loaded configurations":"Vite loaded configurations",
+    "RESTAPI is running on port <port>":"[RESTAPI].red is running on port [<port>].blue"
+}

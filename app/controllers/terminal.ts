@@ -1,78 +1,89 @@
-import { AnyReturn } from "@/types.ts";
+import * as readline from "readline";
 
-export interface Command {
+export interface TerminalCommandContructor {
+    /**
+     * Command name, used in <command> <args>
+     */
     name: string;
-    description: string;
+    /**
+     * Visually used by the terminal and in the aid command
+     */
+    desc: string;
+    /**
+     * Visually used by the terminal and in the aid command
+     */
     args?: string[];
-    run: (term: Terminal, args: string[]) => AnyReturn;
+    /**
+     * Run Terminal Command
+     * @param term Terminal actions
+     * @param args Arguments
+     */
+    run: (term: TerminalCommandContructor & Terminal, args: string[]) => Promise<any>;
 }
 
+/**
+ * Enable terminal commands in Application Panel
+ */
 export class Terminal {
-    public static cmds = new Map<string, Terminal>();
+    /**
+     * Readline, for commands interactions
+     */
+    static rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
 
-    constructor(public readonly cmd: Command) {
-        Terminal.cmds.set(cmd.name, this);
+    /**
+     * Map of All cmds registred
+     */
+    static cmds = new Map<string, TerminalCommandContructor>();
+    constructor(cmd: TerminalCommandContructor) {
+        Terminal.cmds.set(cmd.name, cmd)
     }
 
-    public async input() {
-        return await Terminal.input();
-    }
-    public static async input() {
-        const decoder = new TextDecoder();
-        const encoder = new TextEncoder();
-        await Deno.stdout.write(encoder.encode("> input:"));
-        const inputBuffer = new Uint8Array(1024);
-        const n = <number> await Deno.stdin.read(inputBuffer);
-        const text = decoder.decode(inputBuffer.subarray(0, n)).trim();
-        return text;
-    }
 
+    /**
+     * Start Terminal interactions
+     */
     public static async start() {
-        console.log(
-            "Welcome to [Terminal].blue interactions! digit [help].gold-b for view console commands",
-        );
-        do {
-            const result = await this.input();
+        console.log("Welcome to [Terminal].blue interactions! digit [help].gold-b for view console commands");
+        Terminal.rl.question("> action:", Terminal.input.bind(this));
+        Terminal.rl.on('close', () => {
+            console.log("[finishing].bold [panel...].blue-b [until more!].bold")
+            process.exit(0);
+        });
+    }
 
-            const [cmdName, ...args] = result.split(/\s+/);
-            const command = Terminal.cmds.get(cmdName);
-            if (command) {
-                try {
-                    console.clear();
-                    console.log(`Executing [${result}].blue`);
-                    await command.cmd.run(command, args);
-                } catch (error) {
-                    console.error(`Error: ${error.message}`);
-                }
+    /**
+     * Process Input texts
+     * @param input 
+     */
+    private static async input(input: string) {
+        const [cmd, ...args] = input.trim().split(' ');
+        console.clear();
+        const command = Terminal.cmds.get(cmd);
+        if (command) {
+            console.log(`Executing [${command.name} ${args.join(" ")}].lime-b command...`)
+            Terminal.rl.pause();
+            await command.run({ ...command, ...this }, args);
+        } else {
+            const similar = [...Terminal.cmds.keys()].filter(c => c.includes(cmd));
+            if (similar.length > 0) {
+                console.log("----------------------------------------------------------------")
+                console.warn(`[Command not found.].red-b`);
+                console.log(`[Did you mean?].bold possible [ commands available].green-b:`);
+                similar.map(cmmd => {
+                    const command = Terminal.cmds.get(cmmd);
+                    if (command) console.log(`    [${command.name}].blue-b ${command.args ?  `< [${command.args.join("].lime [|].reset [")}].lime >` : ""} - [${command.desc}].bold`);
+                })
+                console.log("----------------------------------------------------------------")
             } else {
-                if (cmdName) console.warn(`Unknown command: ${cmdName}`);
+                console.log("----------------------------------------------------------------")
+                console.warn(`[Command not found.].red-b`);
+                console.log("----------------------------------------------------------------")
             }
-        } while (true);
+        }
+        Terminal.rl.resume();
+        Terminal.rl.question("> action:", this.input.bind(this));
     }
 }
-
-new Terminal({
-    name: "help",
-    description: "View console [commands].blue",
-    args: ["page"],
-    run: (_, args) => {
-        const cmds = Array.from(Terminal.cmds.values());
-        const page = parseInt(args[0]) || 1;
-        const itemsPerPage = 5;
-        const totalPages = Math.ceil(cmds.length / itemsPerPage);
-        const start = (page - 1) * itemsPerPage;
-        const end = start + itemsPerPage;
-
-        const commandsToShow = cmds.slice(start, end);
-
-        if (commandsToShow.length === 0) {
-            console.log(`No commands found for page [${page}].blue. Available pages: 1-[${totalPages}].gold`);
-        }
-
-        const helpText = commandsToShow.map((cmd) => {
-            return `> [${cmd.cmd.name}].gold < [${cmd.cmd.args?.join("].green > < [")}].green > - ${cmd.cmd.description}`;
-        }).join("\n");
-
-        console.log(`Commands (Page [${page}].blue/[${totalPages}].blue):\n${helpText}`);
-    },
-});

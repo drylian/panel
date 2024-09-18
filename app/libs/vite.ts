@@ -2,41 +2,54 @@ import { watch } from "node:fs";
 import { exec, execSync } from "node:child_process";
 import os from "node:os";
 import fs from "node:fs";
-import env from "@/libs/env.ts";
-import { Terminal } from "@/controllers/terminal.ts";
-import { execute, executeSync } from "@/helpers.ts";
+import { Terminal } from "@/controllers/terminal";
+import HttpProxy from "@fastify/http-proxy";
+import { FastifyInstance } from "fastify";
 
-let VITE_PORT = 3000;
-let timeout: number | null = null;
+let timeout: NodeJS.Timeout | null = null;
+export const VITE_PORT = 5173;
+const TARGET = `http://localhost:${VITE_PORT}`;
 
 /**
  * Start Vite configurations in server
  */
-export function Vite(port: number = 3000, backend = 3001) {
-    VITE_PORT = port;
+export function Vite(server:FastifyInstance) {
     if (!vite.process) {
         kill();
         if (!fs.existsSync("./resources/node_modules")) {
             console.log(`Installing node_modules of resources.`);
             execSync(`cd ./resources && npm install`);
         }
-        env.save(
-            "VITE_DEVELOPMENT_BACKEND_URL",
-            `http://localhost:${backend}`,
-            "Only development",
-            "./resources/.env",
-        );
+        server.register(HttpProxy, {
+            upstream: TARGET,
+            prefix: '/',
+            websocket: true,
+            http2: false,
+          });
         vite.start();
     }
 
     new Terminal({
-        name: "npm",
-        description: "Manager npm of frontend",
-        args: ["command"],
+        name: "vite",
+        desc: "Executes npm commands in react path",
         async run(_, args) {
-            await execute(`cd ./resources && npm ${args.join(" ")}`);
+            if (args.length && args.includes("--restart")) {
+                vite.restart()
+            } else {
+                execSync("cd ./resources && npm " + args.join(" "), { stdio: "inherit" });
+                execSync("cd ..", { stdio: "inherit" });
+            }
         },
-    });
+    })
+
+    new Terminal({
+        name: "npx",
+        desc: "Executes npx commands in react path",
+        async run(_, args) {
+            execSync("cd ./resources && npx " + args.join(" "), { stdio: "inherit" });
+            execSync("cd ..", { stdio: "inherit" });
+        },
+    })
 
     watch("./resources/package.json", function () {
         if (!timeout) {
@@ -103,7 +116,7 @@ class Controller {
             console.log("[Vite].lime-b is already [running].green-b.");
             return;
         }
-        this.process = executeSync(Controller.command);
+        this.process = exec(Controller.command);
 
         console.log("[Vite].lime-b started.");
     }

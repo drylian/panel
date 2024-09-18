@@ -1,19 +1,15 @@
-import { Config, Configuration } from "../controllers/configuration.ts";
-import { DatabaseConf } from "@/config/database.ts";
-import { LoggerConf } from "./logger.ts";
+import { EnvConfiguration } from "@/controllers/configs/envConfiguration";
+import { DatabaseConf } from "@/config/database";
+import { LoggerConf } from "@/config/logger";
+const Config = EnvConfiguration.type;
 
-/**
- * Global configuration settings for the Dashboard application.
- * This object defines various configuration parameters used throughout the application.
- * 
- */
-export const Global = {
+const Configurations = {
     /**
      * Configuration for the environment type.
      * 
      * @default "development"
      */
-    node: new Configuration({
+    node: new EnvConfiguration({
         env: "NODE_ENV",
         type: Config.String,
         def: "development",
@@ -24,22 +20,21 @@ export const Global = {
      * 
      * @default 3000
      */
-    port: new Configuration({
+    port: new EnvConfiguration({
         env: "APP_PORT",
         type: Config.Number,
         def: 3000,
     }),
 
     /**
-     * Port used for development.
-     * This port is used by Vite for development React applications and the dashboard API.
+     * Main Language of Application.
      * 
-     * @default 3001
+     * @default en_US
      */
-    dev_port: new Configuration({
-        env: "APP_DEVPORT",
-        type: Config.Number,
-        def: 3001,
+    lang: new EnvConfiguration({
+        env: "APP_LANGUAGE",
+        type: Config.String,
+        def: "en_US",
     }),
 
     /**
@@ -47,7 +42,7 @@ export const Global = {
      * 
      * @default "0.0.0.0"
      */
-    hostname: new Configuration({
+    hostname: new EnvConfiguration({
         env: "APP_HOSTNAME",
         type: Config.String,
         def:"0.0.0.0"
@@ -58,7 +53,7 @@ export const Global = {
      * 
      * @default false
      */
-    debug: new Configuration({
+    debug: new EnvConfiguration({
         env: "DEBUG",
         type: Config.Boolean,
         def: false,
@@ -67,6 +62,8 @@ export const Global = {
     ...LoggerConf,
     ...DatabaseConf
 };
+export type Configurations = typeof Configurations;
+global.__Configurations = Configurations;
 
 /**
  * Initializes the configuration by applying the settings.
@@ -74,4 +71,4 @@ export const Global = {
  * 
  * @function
  */
-Configuration.config();
+EnvConfiguration.config();
