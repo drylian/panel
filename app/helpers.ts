@@ -178,7 +178,6 @@ Loggings.add(LoggingsTranslatorPlugin);
  */
 export const logger = new Loggings("Dashboard", "gold");
 Loggings.useConsole(logger);
-global.console.use = global.Language.live.use;
 
 /**
  * Load primary lang of dashboard

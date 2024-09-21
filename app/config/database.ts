@@ -1,7 +1,5 @@
-import { EnvConfiguration } from "@/controllers/configs/EnvConfiguration";
+import { ConfigType, Configuration } from "@/controllers/config";
 import { DBDialect } from "@/types/types";
-
-const Config = EnvConfiguration.type;
 
 /**
  * Database Configuration
@@ -14,7 +12,7 @@ export const DatabaseConf = {
      *
      * @type {Configuration}
      */
-    db_dialect: new EnvConfiguration<DBDialect>({
+    db_dialect: new Configuration<DBDialect>({
         env: "DB_DIALECT",
         def: "sqlite",
         chk(value, def) {
@@ -22,7 +20,7 @@ export const DatabaseConf = {
                 return value as DBDialect;
             } else return def;
         },
-        type: Config.String,
+        type: ConfigType.String,
     }),
 
     /**
@@ -30,10 +28,10 @@ export const DatabaseConf = {
      *
      * @type {Configuration}
      */
-    db_username: new EnvConfiguration({
+    db_username: new Configuration({
         env: "DB_USERNAME",
         def: "root",
-        type: Config.String,
+        type: ConfigType.String,
     }),
 
     /**
@@ -41,10 +39,10 @@ export const DatabaseConf = {
      *
      * @type {Configuration}
      */
-    db_password: new EnvConfiguration({
+    db_password: new Configuration({
         env: "DB_PASSWORD",
         def: "password",
-        type: Config.String,
+        type: ConfigType.String,
     }),
 
     /**
@@ -52,10 +50,10 @@ export const DatabaseConf = {
      *
      * @type {Configuration}
      */
-    db_database: new EnvConfiguration({
+    db_database: new Configuration({
         env: "DB_DATABASE",
         def: "my_database",
-        type: Config.String,
+        type: ConfigType.String,
     }),
 
     /**
@@ -63,9 +61,9 @@ export const DatabaseConf = {
      *
      * @type {Configuration}
      */
-    db_hostname: new EnvConfiguration({
+    db_hostname: new Configuration({
         env: "DB_HOST",
         def: "localhost",
-        type: Config.String,
+        type: ConfigType.String,
     }),
 };

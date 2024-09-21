@@ -1,4 +1,4 @@
-await import("@/config");
+import "@/config";
 import "@/helpers";
 import { Kernel } from "@/controllers/kernel";
 import lodash from "lodash";

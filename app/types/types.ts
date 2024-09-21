@@ -1,3 +1,3 @@
-export type AnyReturn = unknown | Promise<unknown>;
+export type AnyReturn = unknown;
 
 export type DBDialect = "sqlite" | "mysql" | "postgres" | "mongodb";

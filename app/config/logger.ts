@@ -1,14 +1,13 @@
-import { EnvConfiguration } from "@/controllers/configs/EnvConfiguration";
+import { ConfigType, Configuration } from "@/controllers/config";
 import { LoggingsLevel } from "@loggings/beta/dist/types/libs/types";
-const Config = EnvConfiguration.type;
 
 export const LoggerConf = {
     /**
      * Level of register/show logger
      */
-    log_level: new EnvConfiguration<LoggingsLevel>({
+    log_level: new Configuration<LoggingsLevel>({
         env: "LOG_LEVEL",
-        type: Config.String,
+        type: ConfigType.String,
         def: "info",
         chk(_value, def) {
             const value = _value.toLocaleLowerCase();

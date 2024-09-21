@@ -1,24 +1,23 @@
-import { trySet } from "@/helpers";
-import env from "@/libs/env";
+import env from "@/controllers/config/env-lib";
 import { Loggings } from "@loggings/beta";
 
-enum Config {
-    String = "Str",
-    Number = "Int",
-    Boolean = "Bool",
+export enum ConfigType {
+    String,
+    Number,
+    Boolean,
 }
 
 interface Constructor<Schematic> {
-    type: Config;
+    type: ConfigType;
     env: string;
     save?: boolean;
     chk?(value: string, def: Schematic): Schematic;
     def: Schematic;
 }
 
-export class EnvConfiguration<Schematic> {
-    public readonly type: Config;
-    public static readonly type = Config;
+export class Configuration<Schematic> {
+    public readonly type: ConfigType;
+    public static readonly type = ConfigType;
     public readonly env: string;
     public readonly save: boolean;
     public value: Schematic;
@@ -49,7 +48,7 @@ export class EnvConfiguration<Schematic> {
                 let value;
                 if (config.chk) {
                     value = config.chk(envs[config.env], config.def as never);
-                } else if (config.type === Config.String) {
+                } else if (config.type === ConfigType.String) {
                     value = envs[config.env];
                 } else {
                     value = trySet(
@@ -68,5 +67,22 @@ export class EnvConfiguration<Schematic> {
                 }
             }
         }
+    }
+}
+
+/**
+ * Try callback value, case catch error set def(default)
+ * @param callback
+ * @param def
+ * @returns
+ */
+function trySet<Datable>(
+    callback: () => Datable,
+    def: Datable,
+): Datable {
+    try {
+        return callback();
+    } catch {
+        return def;
     }
 }
