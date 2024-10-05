@@ -1,5 +1,4 @@
 import "@/config";
-import "@/helpers";
 import { Kernel } from "@/controllers/kernel";
 import lodash from "lodash";
 import { Vite, VITE_PORT } from "@/libs/vite";
@@ -10,117 +9,91 @@ import { DatabaseConnection } from "./controllers/database";
 import { trySet, watcher } from "@/helpers";
 import path from "node:path";
 import { readFile } from "node:fs/promises";
-import { Language } from "@/controllers/langs";
-console.log("Loading [kernels].green...");
+import { i18n } from "@/controllers/i18n";
+import { HttpController } from "./http";
+console.log(__("loading_kernels"));
+
 /**
  * Watcher of env options
  */
 new Kernel({
-    identify: "LanguageWatcher",
-    priority: 0,
-    after() {
-        watcher("locales/**", async (event, filepath) => {
-
-            if (path.extname(filepath) === ".json") {
-                const lang = filepath.replaceAll("\\", "/").split("/").slice(1, 2)![0];
-                const locale = path.relative(path.join("locales", lang), filepath)
-                    .replace(".json", "").replace(/[/\\]/g, ".");
-                    const location = path
-                            .relative("locales", filepath)
-                            .replace(".json", "")
-                            .replace(/[/\\]/g, " -> ");
-                switch (event) {
-                    case "create":
-                        Language.core.set(lang, lodash.merge(Language.core.get(lang) ?? {}, lodash.set(
-                            {},
-                            locale.split("."),
-                            trySet(async () => JSON.parse(await readFile(filepath, "utf-8")), {} as any),
-                        )));
-                        break;
-                    case "delete":
-                        Language.core.set(lang, lodash.merge(Language.core.get(lang) ?? {}, lodash.set(
-                            {},
-                            locale.split("."),
-                            trySet(async () => JSON.parse(await readFile(filepath, "utf-8")), {} as any),
-                        )));
-                        console.debug(`LANG:[[${location}].red deleted.`);
-                        break;
-                    case "edit":
-                        Language.core.set(lang, lodash.merge(Language.core.get(lang) ?? {}, lodash.set(
-                            {},
-                            locale.split("."),
-                            trySet(async () => JSON.parse(await readFile(filepath, "utf-8")), {} as any),
-                        )));
-                        console.debug(`LANG:[${location}].red modded.`);
-                        break;
-                }
-            }
-        });
-    },
+  identify: "i18nWatcher",
+  priority: 0,
+  async after() {
+    watcher("locales", async (event, filepath) => {
+      if (path.extname(filepath) === ".json") {
+        const file = await readFile(filepath, "utf-8");
+        const lang = filepath.replaceAll("\\", "/").split("/").slice(1, 2)![0];
+        const json_data = trySet(() => JSON.parse(file as string), {});
+        const local = filepath
+          .replaceAll("\\", "/")
+          .split("/")
+          .slice(2)
+          .join("/");
+        const locale = local.replace(".json", "").replace(/[/\\]/g, ".");
+        const data = lodash.set({}, locale, json_data);
+        const location = `[${path
+          .relative("locales", filepath)
+          .replace(".json", "")
+          .replace(/[/\\]/g, "].nred -> [")}].blue`;
+        i18n.core.set(lang, lodash.merge(i18n.core.get(lang) ?? {}, data));
+        console.debug(__(`lang_${event}`, { location }));
+      }
+    });
+  },
 });
 
 /**
  * Watcher of env options
  */
 new Kernel({
-    identify: "Configuration",
-    priority: 1,
-    after() {
-        watcher(".env", async () => {
-            Config.reload();
-        });
-    },
+  identify: "Configuration",
+  priority: 1,
+  after() {
+    watcher(".env", async () => {
+      Config.reload(true);
+      if (i18n.live.current !== Config.get("lang"))
+        i18n.live.sl(Config.get("lang"));
+    });
+  },
 });
 
 /**
  * Database Configuration
  */
 new Kernel({
-    identify: "Database",
-    priority: 2,
-    imports: {
-        type: "module",
-        cwd: "app",
-        paths: ["models/**/*.ts"],
-        action(file) {
-            const model = file as { default: typeof BaseEntity };
-            if (DatabaseConnection.models) {
-                DatabaseConnection.models.push(model.default);
-            }
-        },
+  identify: "Database",
+  priority: 2,
+  imports: {
+    type: "module",
+    cwd: "app",
+    paths: ["models/**/*.ts"],
+    action(file) {
+      const model = file as { default: typeof BaseEntity };
+      if (DatabaseConnection.models) {
+        DatabaseConnection.models.push(model.default);
+      }
     },
-    async after() {
-        DatabaseConnection.preset();
-        await DatabaseConnection.connection!.initialize();
-    },
+  },
+  async after() {
+    DatabaseConnection.preset();
+    await DatabaseConnection.connection!.initialize();
+  },
 });
 
 /**
  * Http configuration Kernel
  */
 new Kernel({
-    identify: "Http",
-    priority: 3,
-    after() {
-        const app = fastify();
-
-        if (Config.get("node") === "development") {
-            Vite(app);
-            console.log(
-                `[RESTAPI].blue is running on port [${Config.get("port")}].port`,
-            );
-            console.log(`[VITE].blue is running on port ${VITE_PORT}`);
-        } else {
-            console.log(
-                `Dashboard is running on port [${Config.get("port")}].port`,
-            );
-        }
-
-        app.listen({
-            port: Config.get("port"),
-            host: Config.get("hostname"),
-        });
-    },
+  identify: "Http",
+  priority: 3,
+  async after() {
+    const server = await HttpController();
+    server.listen({
+      port: Config.get("port"),
+      host: Config.get("hostname"),
+    });
+  },
 });
 await Kernel.initialize();
 await Terminal.start();
