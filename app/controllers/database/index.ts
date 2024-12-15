@@ -1,5 +1,6 @@
 import { DataSource, BaseEntity,  } from 'typeorm';
 import LoggingsTypeORM from '@/controllers/database/logger';
+import { DBDialect } from '@/types/types';
 
 export class DatabaseConnection {
     public inited: boolean;
@@ -10,8 +11,8 @@ export class DatabaseConnection {
     }
     public static preset() {
         DatabaseConnection.connection = new DataSource({
-            type: Config.get("db_dialect"),
-            database: Config.get("db_database") ?? ':memory:',
+            type: Env.get("db.dialect") as DBDialect,
+            database: Env.get("db.database") ?? ':memory:',
             synchronize: true,
             logger: new LoggingsTypeORM(),
             entities: DatabaseConnection.models

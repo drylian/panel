@@ -120,7 +120,7 @@ export function watcher(
 ) {
   const watched_files: Record<string, string> = {};
   watch(path, { recursive: true }, async function (_, filename) {
-    let timeout: NodeJS.Timeout | null = null;
+    let timeout: Timer | null = null;
     if (!timeout) {
       if (filename) await loadfiles(join(path, filename));
       timeout = setTimeout(function () {

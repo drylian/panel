@@ -1,9 +1,8 @@
-import "@/config";
+import "@/env";
+import "@/libs/basements";
 import { Kernel } from "@/controllers/kernel";
 import lodash from "lodash";
-import { Vite, VITE_PORT } from "@/libs/vite";
 import { Terminal } from "@/controllers/terminal";
-import fastify from "fastify";
 import { BaseEntity } from "typeorm";
 import { DatabaseConnection } from "./controllers/database";
 import { trySet, watcher } from "@/helpers";
@@ -12,7 +11,6 @@ import { readFile } from "node:fs/promises";
 import { i18n } from "@/controllers/i18n";
 import { HttpController } from "./http";
 console.log(__("loading_kernels"));
-
 /**
  * Watcher of env options
  */
@@ -51,9 +49,9 @@ new Kernel({
   priority: 1,
   after() {
     watcher(".env", async () => {
-      Config.reload(true);
-      if (i18n.live.current !== Config.get("lang"))
-        i18n.live.sl(Config.get("lang"));
+      Env.init();
+      if (i18n.live.current !== Env.get("app.lang"))
+        i18n.live.sl(Env.get("app.lang"));
     });
   },
 });
@@ -90,8 +88,7 @@ new Kernel({
   async after() {
     const server = await HttpController();
     server.listen({
-      port: Config.get("port"),
-      host: Config.get("hostname"),
+      port: Env.get("app.port"),
     });
   },
 });

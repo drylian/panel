@@ -3,7 +3,7 @@ export const DEFAULT_LANGUAGE = "en_US";
 export class i18n {
   public static core = new Map<string, Record<string, object>>();
   public static live = new i18n();
-  public current = global.Config.get("lang") ?? DEFAULT_LANGUAGE;
+  public current = Env.get("app.lang") ?? DEFAULT_LANGUAGE;
 
   public sl(new_lang: string) {
     const lang = i18n.core.get(new_lang);
@@ -26,9 +26,9 @@ export class i18n {
     const lang = i18n.core.get(this.current);
     if (!lang && log) {
       console.warn(
-        `Language ${this.current} not found, using default ${global.Config.get("lang") ?? DEFAULT_LANGUAGE} and trying again...`,
+        `Language ${this.current} not found, using default ${Env.get("app.lang") ?? DEFAULT_LANGUAGE} and trying again...`,
       );
-      this.current = global.Config.get("lang") ?? DEFAULT_LANGUAGE;
+      this.current = Env.get("app.lang") ?? DEFAULT_LANGUAGE;
       const tes = this.trans(key, params, false);
       return tes;
     } else if (!lang && !log) {

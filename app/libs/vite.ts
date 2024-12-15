@@ -5,7 +5,7 @@ import fs from "node:fs";
 import { Terminal } from "@/controllers/terminal";
 import { Handler, Elysia } from "elysia";
 
-let timeout: NodeJS.Timeout | null = null;
+let timeout: Timer | null = null;
 export const VITE_PORT = 5173;
 const TARGET = `http://localhost:${VITE_PORT}`;
 
@@ -48,17 +48,10 @@ export function ViteHandler(app: Elysia) {
  */
 export function Vite() {
   if (!vite.process) {
-    kill();
     if (!fs.existsSync("./resources/node_modules")) {
       console.log(__("vite_installing_node_modules"));
       execSync(`cd ./resources && bun install`);
     }
-    //server.use(HttpProxy, {
-    //  upstream: TARGET,
-    //  prefix: "/",
-    //  websocket: true,
-    //  http2: false,
-    //});
     vite.start();
   }
 
@@ -121,7 +114,20 @@ function kill() {
       const pid = execSync(`lsof -t -i :${VITE_PORT}`).toString().trim();
       if (pid) {
         if (pid === "0") return;
-        execSync(`kill -9 ${pid}`);
+        try {
+          execSync(`kill -9 ${pid}`);
+        } catch (err) {
+          const error = err as Error;
+          // ignore pid not processing
+          if (error.message.endsWith("No such process")) return;
+          // ignore case pid not exist
+          if (error.message.endsWith("not found")) {
+            console.log(__("vite_killed_pid", { port: VITE_PORT, pid }));
+
+            return;
+          }
+          throw err;
+        }
         console.log(__("vite_killed_pid", { port: VITE_PORT, pid }));
       } else {
         console.log(__("vite_no_process_found", { port: VITE_PORT }));

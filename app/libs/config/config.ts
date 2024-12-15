@@ -1,0 +1,81 @@
+import type { ConfigDriver } from "./driver";
+import type { AddSchema } from "./functions";
+import type { ConfigurationSchema, DriverConfiguration, SchematicTyped, SupportedTypeds } from "./types";
+
+export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfiguration<boolean, ExtendedDriverConfig>, SchematedConf extends ReturnType<typeof AddSchema<ConfigurationSchema<any,any>[]>>> {
+   public driver: ConfigDriver<boolean, ExtendedDriverConfig, TypedDriver>;
+   public readonly schemas: SchematicTyped<ReturnType<typeof AddSchema<SchematedConf>>>;
+   public readonly async: TypedDriver['async'];
+   constructor(readonly schematic: { driver: ConfigDriver<boolean, ExtendedDriverConfig, TypedDriver>, schema: SchematedConf}) {
+      this.driver = schematic.driver;
+      this.async = schematic.driver.async;
+      this.schemas = Object.assign({}, ...schematic.schema.map(schema => {
+         return {
+            [schema.key]: schema
+         }
+      }));
+   }
+
+   public cache = {} as { [K in keyof SchematicTyped<SchematedConf>]: SupportedTypeds[SchematicTyped<SchematedConf>[K]['type']] };
+
+   public get config() {
+      return this.driver.config;
+   }
+
+   public set config(update) {
+      this.driver.config = update;
+   }
+
+   public conf<Key extends keyof SchematicTyped<SchematedConf>>(key: Key) {
+      return this.schemas[key];
+   }
+
+   public get<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+      ? Promise<SupportedTypeds[typeof this.schemas[Key]['type']]>
+      : SupportedTypeds[typeof this.schemas[Key]['type']] {
+      const result = this.driver.get(this.schemas[key], this as any);
+      // @ts-ignore unknown type, ignored
+      return result;
+   }
+
+   public set<Key extends keyof SchematicTyped<SchematedConf>>(key: Key, newvalue: SchematicTyped<SchematedConf>[Key]['default']): typeof this.async extends true
+      ? Promise<SupportedTypeds[typeof this.schemas[Key]['type']]>
+      : SupportedTypeds[typeof this.schemas[Key]['type']] {
+      const result = this.driver.set(key as string, newvalue, this as any);
+      // @ts-ignore unknown type, ignored
+      return result;
+   }
+
+   public keys(): keyof SchematicTyped<SchematedConf>[] {
+      // @ts-ignore unknown type, ignored
+      return Object.keys(this.schemas);
+   }
+
+   public has<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+      ? Promise<boolean>
+      : boolean {
+      // @ts-ignore unknown type, ignored
+      return this.driver.has(this as any);
+   }
+
+   public del<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+      ? Promise<boolean>
+      : boolean {
+      // @ts-ignore unknown type, ignored
+      return this.driver.del(this.schemas[key], this as any);
+   }
+
+   public save(): typeof this.async extends true
+      ? Promise<void>
+      : void {
+      // @ts-ignore unknown type, ignored
+      return this.driver.save(this as any);
+   }
+
+   public init(): typeof this.async extends true
+      ? Promise<void>
+      : void {
+      // @ts-ignore unknown type, ignored
+      return this.driver.init(this as any);
+   }
+}
