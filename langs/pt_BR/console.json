@@ -22,5 +22,6 @@
   "terminal_executing_command": "Executando o comando [{command} {args}].lime-b",
   "terminal_command_not_found": "[Comando não encontrado.].red-b",
   "terminal_available_commands": "[Você quis dizer?].bold possíveis [comandos disponíveis].green-b:",
-  "terminal_command_show": "[{command}].blue-b {args} - [{desc}].bold"
+  "terminal_command_show": "[{command}].blue-b {args} - [{desc}].bold",
+  "running_in_devmode":"Funcionando em modo de desenvolvimento"
 }

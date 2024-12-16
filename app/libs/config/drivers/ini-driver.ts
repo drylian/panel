@@ -37,7 +37,8 @@ export const IniDriver = new ConfigDriver({
    set(key, newvalue, instance) {
       const conf = instance.conf(key);
       if (conf.check) {
-         instance.cache[key] = conf.check(conf, instance.cache[key], newvalue);
+         //@ts-ignore ignore
+         instance.cache[key] = conf.check({...conf, instance }, instance.cache[key], newvalue);
       } else {
          instance.cache[key] = newvalue;
       }
@@ -80,7 +81,7 @@ export const IniDriver = new ConfigDriver({
             if (!instance.driver.supported_types.includes(schema.type)) throw new ConfigError(`[InvDriver]: Schema "${schema.key}" not is supported type`);
             if (initial[key.toUpperCase()]) {
                if (schema.check) {
-                  instance.cache[key] = schema.check(schema, instance.cache[key], initial[key.toUpperCase()]);
+                  instance.cache[key] = schema.check({...schema, instance }, instance.cache[key], initial[key.toUpperCase()]);
                } else {
                   instance.cache[key] = initial[key];
                }

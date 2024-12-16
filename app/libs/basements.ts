@@ -1,4 +1,4 @@
-import { trySet } from "@/helpers";
+import { trySet } from "@/libs/utils";
 import { Loggings } from "@loggings/beta";
 import { readFile } from "fs/promises";
 import { glob } from "glob";
@@ -12,7 +12,7 @@ const { i18n } = await import("@/controllers/i18n");
 /**
  * Load primary lang of dashboard
  */
-const paths = await glob("locales/**/*.json");
+const paths = await glob("langs/**/*.json");
 for (const filepath of paths) {
    const file = await readFile(filepath, "utf-8");
    const lang = filepath.replaceAll("\\", "/").split("/").slice(1, 2)![0];

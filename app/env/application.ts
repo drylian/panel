@@ -1,4 +1,6 @@
 import { AddConfig } from "@/libs/config";
+import env from "@/libs/config/formats/env";
+import { generate } from "@/libs/utils";
 import { Loggings } from "@loggings/beta";
 import { existsSync, mkdirSync } from "fs";
 import path from "path";
@@ -31,6 +33,17 @@ export const ApplicationEnvConf = [
       prop:"APP_PORT",
       description: "Application Port",
    } as const),
+
+   AddConfig("app.key", {
+      default: generate(),
+      prop:"APP_KEY",
+      check(conf) {
+         let value = env.read("APP_KEY");
+         if(!value) value = env.save("APP_KEY", conf.default);
+         return value;
+      },
+      description: "Application Crypt Key",
+   }),
 
    AddConfig("app.url", {
       default: "localhost",
@@ -79,7 +92,7 @@ export const ApplicationEnvConf = [
       check(conf, oldvalue, newvalue) {
          const _current = newvalue ? newvalue : oldvalue ? oldvalue : conf.default;
  
-         const pathdir = path.join(Env.get("app.storage"));
+         const pathdir = path.join(conf.instance.get("app.storage"));
          const current = _current.includes(pathdir) ? _current : path.join(pathdir, _current);
  
          if (!existsSync(current)) mkdirSync(current, { recursive: true });

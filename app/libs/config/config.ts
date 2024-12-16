@@ -1,10 +1,10 @@
 import type { ConfigDriver } from "./driver";
 import type { AddSchema } from "./functions";
-import type { ConfigurationSchema, DriverConfiguration, SchematicTyped, SupportedTypeds } from "./types";
+import type { ConfigurationSchema, DriverConfiguration, SupportedTypeds } from "./types";
 
 export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfiguration<boolean, ExtendedDriverConfig>, SchematedConf extends ReturnType<typeof AddSchema<ConfigurationSchema<any,any>[]>>> {
    public driver: ConfigDriver<boolean, ExtendedDriverConfig, TypedDriver>;
-   public readonly schemas: SchematicTyped<ReturnType<typeof AddSchema<SchematedConf>>>;
+   public readonly schemas: MappedByKey<"key", ReturnType<typeof AddSchema<SchematedConf>>>;
    public readonly async: TypedDriver['async'];
    constructor(readonly schematic: { driver: ConfigDriver<boolean, ExtendedDriverConfig, TypedDriver>, schema: SchematedConf}) {
       this.driver = schematic.driver;
@@ -16,7 +16,7 @@ export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfi
       }));
    }
 
-   public cache = {} as { [K in keyof SchematicTyped<SchematedConf>]: SupportedTypeds[SchematicTyped<SchematedConf>[K]['type']] };
+   public cache = {} as { [K in keyof MappedByKey<"key",SchematedConf>]: SupportedTypeds[MappedByKey<"key",SchematedConf>[K]['type']] };
 
    public get config() {
       return this.driver.config;
@@ -26,11 +26,11 @@ export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfi
       this.driver.config = update;
    }
 
-   public conf<Key extends keyof SchematicTyped<SchematedConf>>(key: Key) {
+   public conf<Key extends keyof MappedByKey<"key",SchematedConf>>(key: Key) {
       return this.schemas[key];
    }
 
-   public get<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+   public get<Key extends keyof MappedByKey<"key",SchematedConf>>(key: Key): typeof this.async extends true
       ? Promise<SupportedTypeds[typeof this.schemas[Key]['type']]>
       : SupportedTypeds[typeof this.schemas[Key]['type']] {
       const result = this.driver.get(this.schemas[key], this as any);
@@ -38,7 +38,7 @@ export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfi
       return result;
    }
 
-   public set<Key extends keyof SchematicTyped<SchematedConf>>(key: Key, newvalue: SchematicTyped<SchematedConf>[Key]['default']): typeof this.async extends true
+   public set<Key extends keyof MappedByKey<"key",SchematedConf>>(key: Key, newvalue: MappedByKey<"key",SchematedConf>[Key]['default']): typeof this.async extends true
       ? Promise<SupportedTypeds[typeof this.schemas[Key]['type']]>
       : SupportedTypeds[typeof this.schemas[Key]['type']] {
       const result = this.driver.set(key as string, newvalue, this as any);
@@ -46,19 +46,19 @@ export class Configuration<ExtendedDriverConfig, TypedDriver extends DriverConfi
       return result;
    }
 
-   public keys(): keyof SchematicTyped<SchematedConf>[] {
+   public keys(): keyof MappedByKey<"key",SchematedConf>[] {
       // @ts-ignore unknown type, ignored
       return Object.keys(this.schemas);
    }
 
-   public has<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+   public has<Key extends keyof MappedByKey<"key",SchematedConf>>(key: Key): typeof this.async extends true
       ? Promise<boolean>
       : boolean {
       // @ts-ignore unknown type, ignored
-      return this.driver.has(this as any);
+      return this.driver.has(this.conf(key), this as any);
    }
 
-   public del<Key extends keyof SchematicTyped<SchematedConf>>(key: Key): typeof this.async extends true
+   public del<Key extends keyof MappedByKey<"key",SchematedConf>>(key: Key): typeof this.async extends true
       ? Promise<boolean>
       : boolean {
       // @ts-ignore unknown type, ignored

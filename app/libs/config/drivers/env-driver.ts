@@ -22,7 +22,8 @@ export const EnvDriver = new ConfigDriver({
    set(key, newvalue, instance) {
       const conf = instance.conf(key);
       if (conf.check) {
-         instance.cache[key] = conf.check(conf, instance.cache[key], newvalue);
+         //@ts-ignore diff type
+         instance.cache[key] = conf.check({...conf, instance }, instance.cache[key], newvalue);
       } else {
          instance.cache[key] = newvalue;
       }
@@ -45,21 +46,21 @@ export const EnvDriver = new ConfigDriver({
    },
    init(instance) {
       const pathfile = instance.driver.config.filepath;
-
       const initial = env.read(undefined, pathfile);
-
       if (instance.schemas) {
          for (const key in instance.schemas) {
             const schema = instance.conf(key);
             if (!instance.driver.supported_types.includes(schema.type)) throw new ConfigError(`[EnvDriver]: Schema "${schema.key}" not is supported type`);
             if (initial[instance.conf(key).prop.toUpperCase()]) {
                if (schema.check) {
-                  instance.cache[key] = schema.check(schema, instance.cache[key], initial[instance.conf(key).prop.toUpperCase()]);
+                  instance.cache[key] = schema.check({...schema, instance }, schema.default, initial[instance.conf(key).prop.toUpperCase()]);
                } else {
                   instance.cache[key] = initial[instance.conf(key).prop.toUpperCase()];
                }
+            } else {
+               if (schema.default && !instance.cache[key] && !schema.check) instance.cache[key] = schema.default;
+               if (schema.check) instance.cache[key] = schema.check({...schema, instance }, undefined, schema.default);
             }
-            if (schema.default && !instance.cache[key]) instance.cache[key] = schema.default;
          }
       } else {
          for (const key in initial) {

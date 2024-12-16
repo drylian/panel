@@ -25,17 +25,25 @@ export interface TerminalCommandContructor {
 }
 
 /**
+ * Necessary for terminal interactions not broken
+ */
+type GlobalTerminalTypes = typeof global & {
+  __terminal__rl:readline.Interface;
+}
+
+if(typeof (global as GlobalTerminalTypes) == "undefined")  (global as GlobalTerminalTypes).__terminal__rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+/**
  * Enable terminal commands in Application Panel
  */
 export class Terminal {
   /**
    * Readline, for commands interactions
    */
-  static rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
+  static rl = (global as GlobalTerminalTypes).__terminal__rl;
   /**
    * Map of All cmds registred
    */

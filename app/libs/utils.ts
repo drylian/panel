@@ -1,10 +1,8 @@
-import { Loggings } from "@loggings/beta";
 import { exec, ExecOptions } from "node:child_process";
-import { existsSync, FSWatcher, watch } from "node:fs";
-import { glob } from "glob";
+import { existsSync, watch } from "node:fs";
 import { join } from "node:path";
 import _ from "lodash";
-import { readFile } from "node:fs/promises";
+import crypto from 'crypto';
 
 /**
  * This constant provides the path of the main module that started the Node.js process.
@@ -36,6 +34,31 @@ export function trySet<Datable>(
   }
 }
 
+/**
+ * Generate randow string
+ */
+export function generate(length: number = 32, ext = false): string {
+  let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  if (ext) chars += '!@#$%^&*()-_=+[]{}|;:,.<>?/`~';
+  const randomBytes = crypto.randomBytes(length);
+  const randomString = Array.from(randomBytes)
+      .map(byte => chars[byte % chars.length])
+      .join('');
+
+  return randomString;
+}
+
+
+/**
+ * Generate randow string
+ */
+export function randomString(length: number = 10): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let str = "";
+  for (let i = 0; i < length; i++) {
+    str += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+}
 /**
  * Executes a shell command synchronously and writes the output to the Deno stdout.
  *

@@ -5,13 +5,13 @@ import type { ConfigDriver } from "./driver";
  * Supported configuration types for the application.
  */
 export type SupportedTypeds = {
-    "string":string;
-    "number":number;
-    "boolean":boolean;
-    "array":Array<any>;
-    "object":object;
-    "arraybuffer": ArrayBuffer;
-    "buffer": Buffer;
+   "string": string;
+   "number": number;
+   "boolean": boolean;
+   "array": Array<any>;
+   "object": object;
+   "arraybuffer": ArrayBuffer;
+   "buffer": Buffer;
 }
 
 
@@ -45,14 +45,14 @@ export interface ConfigurationSchema<Typed extends keyof SupportedTypeds, Key ex
     * @returns The validated or transformed configuration value.
     */
    check?: (
-      conf: ConfigurationSchema<Typed, Key>,
+      conf: ConfigurationSchema<Typed, Key> & { instance: Configuration<any, DriverConfiguration<false, any>, ConfigurationSchema<any, any>[]> },
       oldvalue: SupportedTypeds[Typed] | undefined,
-      newvalue?: SupportedTypeds[Typed] | undefined
+      newvalue?: SupportedTypeds[Typed] | undefined,
    ) => SupportedTypeds[Typed];
 }
 
-export type SchematicTyped<T extends readonly { key: string }[]> = {
-   [K in T[number]["key"]]: Extract<T[number], { key: K }>;
+export type MappedByKey<KL extends string,T extends readonly { [KV in KL]: string }[]> = {
+   [K in T[number][KL]]: Extract<T[number], { [KV in KL]: K }>;
 };
 
 /**
