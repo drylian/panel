@@ -1,13 +1,12 @@
-import { AddSchema, Configuration, EnvDriver } from "@/libs/config";
-import { DatabaseEnvConf } from "./database";
-import { ApplicationEnvConf } from "./application";
+import { Configuration, EnvDriver } from "@/libs/config";
 
 const Env = new Configuration({
    driver: EnvDriver,
-   schema: AddSchema(
-      ...ApplicationEnvConf,
-      ...DatabaseEnvConf,
-   )
+   schema: [
+      ...(await import("./application")).default,
+      ...(await import("./database")).default,
+      ...(await import("./session")).default,
+   ]
 })
 
 Env.init();

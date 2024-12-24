@@ -5,7 +5,7 @@ import { Loggings } from "@loggings/beta";
 import { existsSync, mkdirSync } from "fs";
 import path from "path";
 
-export const ApplicationEnvConf = [
+export default [
    AddConfig("app.mode", {
       default: "development",
       prop:"NODE_ENV",

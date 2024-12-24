@@ -1,0 +1,10 @@
+{
+  "name": "@panel/kernel",
+  "module": "index.ts",
+  "types": "index.ts",
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "eslint -c eslint.config.js --fix"
+  }
+}

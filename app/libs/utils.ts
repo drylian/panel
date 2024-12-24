@@ -5,6 +5,29 @@ import _ from "lodash";
 import crypto from 'crypto';
 
 /**
+ * Encrypt value AES
+ */
+export function AESencrypt(value: string, key:string): string {
+    const iv = crypto.randomBytes(16); 
+    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
+    const encrypted = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+    return `${iv.toString("base64")}:${encrypted.toString("base64")}`;
+}
+
+/**
+ * Descrypt value AES
+ */
+export function AESdecrypt(encrypted: string, key:string): string {
+    const [ivBase64, encryptedBase64] = encrypted.split(":");
+    if (!ivBase64 || !encryptedBase64) throw new Error("Invalid descrypted value.");
+    const iv = Buffer.from(ivBase64, "base64");
+    const buffer = Buffer.from(encryptedBase64, "base64");
+    const decipher = crypto.createDecipheriv("aes-256-cbc", key,  iv);
+    const decrypted = Buffer.concat([decipher.update(buffer), decipher.final()]);
+    return decrypted.toString("utf8");
+}
+
+/**
  * This constant provides the path of the main module that started the Node.js process.
  * It's useful for determining the root directory of the project.
  */
@@ -48,17 +71,6 @@ export function generate(length: number = 32, ext = false): string {
   return randomString;
 }
 
-
-/**
- * Generate randow string
- */
-export function randomString(length: number = 10): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let str = "";
-  for (let i = 0; i < length; i++) {
-    str += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-}
 /**
  * Executes a shell command synchronously and writes the output to the Deno stdout.
  *

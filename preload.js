@@ -13,8 +13,14 @@ if (process.argv.includes("--vite") && typeof vite === "undefined") {
 
   const decoder = new TextDecoder();
 
+  if (!existsSync("./web/node_modules")) {
+    Bun.spawnSync(["bun", "install"], {
+      cwd: "./web",
+    });
+  }
+
   global.vite = Bun.spawn({
-    cmd: ["bunx", "vite"],
+    cmd: ["bunx", "--bun", "vite"],
     cwd: "./web",
     stdout: "pipe",
     stderr: "pipe",

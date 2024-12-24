@@ -1,0 +1,1 @@
+import '@panel/env' // libera o Env.get("valores") no global desse projeto(api)

@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "main": "dist/loader.js",
   "scripts": {
-    "dev": "bun --hot app/loader.ts --vite"
+    "dev": "bun --hot app/loader.ts --vite",
+    "build": "bun build --target node --outfile discord-bot.mjs --minify test.ts"
   },
   "author": "",
   "license": "ISC",

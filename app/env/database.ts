@@ -1,7 +1,7 @@
 import { AddConfig } from "@/libs/config";
 import { DBDialect } from "@/types/types";
 
-export const DatabaseEnvConf = [
+export default [
    /**
      * The database dialect (sqlite | mysql).
       */
